@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tech Advisor</title>
+  <style>
+    @keyframes scroll-left {
+      0% { transform: translateX(0%); }
+      100% { transform: translateX(-100%); }
+    }
+
+    @keyframes fadeInUp {
+      0% { opacity: 0; transform: translateY(20px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-20px); }
+    }
+
+    body {
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background: linear-gradient(to right, #0f2027, #ff6a8f); /* Dark blue to pink gradient */
+  overflow-x: hidden;
+  color: white;
+}
+
+
+    canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: -2;
+    }
+
+    .marquee-container {
+      overflow: hidden;
+      white-space: nowrap;
+      box-sizing: border-box;
+    }
+
+    .marquee {
+      display: inline-block;
+      padding-left: 100%;
+      animation: scroll-left 10s linear infinite;
+      color: #fff;
+      font-size: 2em;
+      font-weight: bold;
+      text-shadow: 0 0 10px #f48fb1;
+    }
+
+    h1 {
+      font-size: 3em;
+      text-align: center;
+      margin-top: 20px;
+      color: #fff;
+      animation: fadeIn 2s ease-in-out;
+    }
+
+    .nav-buttons {
+      text-align: center;
+      margin-top: 20px;
+      animation: fadeInUp 1.5s ease-in-out;
+    }
+
+    .nav-buttons button {
+      margin: 10px;
+      padding: 12px 25px;
+      font-size: 1em;
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(45deg, #ff6ec4, #7873f5);
+      color: white;
+      cursor: pointer;
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    .nav-buttons button:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 20px rgba(255, 105, 180, 0.4);
+    }
+
+    .content {
+      margin: 30px auto;
+      width: 90%;
+      max-width: 1000px;
+      display: none;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      padding: 15px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      transition: transform 0.3s;
+    }
+
+    .card:hover {
+      transform: scale(1.05);
+    }
+
+    select, input[type=text] {
+      padding: 10px;
+      align-self: center;
+      margin: 10px;
+      border-radius: 20px;
+      border: none;
+      width: 60%;
+      font-size: 1em;
+    }
+
+    .ask-btn {
+      padding: 10px 14px;
+      border-radius: 50%;
+      background-color: #4fc3f7;
+      border: none;
+      color: white;
+      cursor: pointer;
+      font-size: 1.2em;
+      vertical-align: middle;
+    }
+
+    .ask-btn:hover {
+      background-color: #0288d1;
+    }
+
+    .pagination button {
+      padding: 8px 12px;
+      margin: 5px;
+      border: none;
+      border-radius: 6px;
+      background-color: #81d4fa;
+      color: white;
+      cursor: pointer;
+    }
+
+    .pagination button:disabled {
+      background-color: #b3e5fc;
+      cursor: not-allowed;
+    }
+
+    footer {
+      text-align: center;
+      padding: 20px;
+      font-size: 1.2em;
+      color: #eee;
+      background: rgba(0, 0, 0, 0.4);
+      margin-top: 60px ;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="bgCanvas"></canvas>
+
+  <div class="marquee-container">
+    <h1 class="marquee">Tech Advisor</h1>
+    <p style="text-align:center; margin-top:-10px; color:#eee;">SOLVE ALL YOUR TECH RELATED QUERIES IN ONE GO!</p>
+  </div>
+
+  <h1>Tech Advisor</h1>
+
+  <div class="nav-buttons">
+    <button onclick="showView('chat')">AI Chatbot</button>
+    <button onclick="showView('laptops')">Browse Laptops</button>
+    <button onclick="showView('tips')">Device Tips & Optimization</button>
+  </div>
+
+  <div class="content" id="chat">
+    <input type="text" id="chatPrompt" placeholder="Ask something about tech...">
+    <button class="ask-btn" onclick="sendPrompt()">➤</button>
+    <p id="chatResponse"></p>
+  </div>
+
+  <div class="content" id="laptops">
+    <select id="laptopCategory" onchange="fetchLaptops(1)">
+      <option value="">Select Category</option>
+      <option value="Ultrabook">Ultrabook</option>
+      <option value="Gaming">Gaming</option>
+      <option value="Notebook">Notebook</option>
+      <option value="2 in 1 Convertible">2 in 1 Convertible</option>
+    </select>
+    <div class="grid" id="laptopGrid"></div>
+    <div class="pagination">
+      <button id="laptopPrev" onclick="prevLaptopPage()">Prev</button>
+      <button id="laptopNext" onclick="nextLaptopPage()">Next</button>
+    </div>
+  </div>
+
+  <div class="content" id="mobiles">
+    <div class="grid" id="mobileGrid"></div>
+    <div class="pagination">
+      <button id="mobilePrev" onclick="prevMobilePage()">Prev</button>
+      <button id="mobileNext" onclick="nextMobilePage()">Next</button>
+    </div>
+  </div>
+
+  <div class="content" id="tips">
+    <h2 style="text-align:center; color:#fff;">Device Tips & Optimization</h2>
+    <div class="grid">
+      <div class="card">
+        <h3>Laptop Tip: Battery Life</h3>
+        <p>Lower screen brightness and turn off keyboard backlighting when not needed. Use battery saver mode on Windows or macOS for longer battery life.</p>
+      </div>
+      <div class="card">
+        <h3>Laptop Tip: Speed Up</h3>
+        <p>Uninstall unused software, disable startup programs, and upgrade to SSD for faster performance.</p>
+      </div>
+      <div class="card">
+        <h3>Mobile Tip: App Management</h3>
+        <p>Close unused background apps, clear cache regularly, and avoid installing apps from unknown sources to improve performance.</p>
+      </div>
+      <div class="card">
+        <h3>Mobile Tip: Battery Optimization</h3>
+        <p>Enable battery saver mode, reduce screen timeout, and avoid overcharging to extend battery lifespan.</p>
+      
+      </div>
+      <div class="card">
+        <h3>Mobile Tip: Overheating</h3>
+        <p>Avoid heavy gaming or charging while using demanding apps. Let your phone rest occasionally to cool down.</p>
+      </div>
+      <div class="card">
+        <h3>Laptop Tip: Dust Management</h3>
+        <p>Clean vents and fans regularly to prevent dust build-up that can cause overheating and lag.</p>
+      </div>
+      <div class="card">
+        <h3>Mobile Tip: Storage Optimization</h3>
+        <p>Delete unused media, use cloud backups, and move large files to SD cards to free up space.</p>
+      </div>
+      <div class="card">
+        <h3>Laptop Tip: External Devices</h3>
+        <p>Remove unused USBs and peripherals to improve boot time and reduce power consumption.</p>
+      </div>
+      <div class="card">
+        <h3>Mobile Tip: Battery Calibration</h3>
+        <p>Let your battery discharge fully and then recharge it to 100% occasionally to improve accuracy of battery stats.</p>
+      </div>
+      <div class="card">
+        <h3>Laptop Tip: Safe Shutdown</h3>
+        <p>Avoid force shutdowns. Always use the proper shutdown/restart process to protect system files.</p>
+      </div>
+      <div class="card">
+        <h3>Mobile Tip: Background Sync</h3>
+        <p>Disable auto-sync for apps you rarely use. It saves data, battery, and boosts performance.</p>
+      </div>
+      <div class="card">
+        <h3>Laptop Tip: Regular Updates</h3>
+        <p>Keep your OS and drivers updated for improved security and performance.</p>
+      </div>
+      <div class="card">
+        <h3>Mobile Tip: App Permissions</h3>
+        <p>Review app permissions regularly. Revoke access to features apps don’t actually need.</p>
+      </div>
+      <div class="card">
+        <h3>Mobile Tip: Dark Mode</h3>
+        <p>Use dark mode to reduce eye strain and save battery on OLED screens.</p>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Made by TrioTech 🛠️
+  </footer>
+
+  <script>
+    // View toggler
+    function showView(id) {
+      ['chat','laptops','mobiles','tips'].forEach(v => {
+        document.getElementById(v).style.display = (v === id) ? 'block' : 'none';
+      });
+    }
+
+    // Chat API
+    async function sendPrompt() {
+      const prompt = document.getElementById('chatPrompt').value;
+      const res = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt })
+      });
+      const data = await res.json();
+      document.getElementById('chatResponse').innerText = data.response || data.error;
+    }
+
+    // Laptop fetch
+    let laptopPage = 1, laptopTotalPages = 1;
+    async function fetchLaptops(page) {
+      laptopPage = page;
+      const category = document.getElementById('laptopCategory').value;
+      const res = await fetch(`/api/laptops?category=${category}&page=${page}`);
+      const data = await res.json();
+      const grid = document.getElementById('laptopGrid');
+      laptopTotalPages = data.total_pages;
+      grid.innerHTML = '';
+      data.laptops.forEach(l => {
+        const card = `<div class='card'><h3>${l.Product}</h3><p>${l.TypeName} - ${l.CPU_Company} ${l.CPU_Type}</p></div>`;
+        grid.innerHTML += card;
+      });
+      document.getElementById('laptopPrev').disabled = page <= 1;
+      document.getElementById('laptopNext').disabled = page >= laptopTotalPages;
+    }
+    function prevLaptopPage() { if (laptopPage > 1) fetchLaptops(laptopPage - 1); }
+    function nextLaptopPage() { if (laptopPage < laptopTotalPages) fetchLaptops(laptopPage + 1); }
+
+    // Mobile fetch
+    let mobilePage = 1, mobileTotalPages = 1;
+    async function fetchMobiles(page) {
+      mobilePage = page;
+      const res = await fetch(`/api/mobiles?page=${page}`);
+      const data = await res.json();
+      const grid = document.getElementById('mobileGrid');
+      mobileTotalPages = data.total_pages;
+      grid.innerHTML = '';
+      data.mobiles.forEach(m => {
+        const card = `<div class='card'><h3>${m.Model}</h3><p>${m['Company Name']} - ${m.RAM} RAM</p><p>Battery: ${m['Battery Capacity']} mAh | Price: ₹${m.Price}</p></div>`;
+        grid.innerHTML += card;
+      });
+      document.getElementById('mobilePrev').disabled = page <= 1;
+      document.getElementById('mobileNext').disabled = page >= mobileTotalPages;
+    }
+    function prevMobilePage() { if (mobilePage > 1) fetchMobiles(mobilePage - 1); }
+    function nextMobilePage() { if (mobilePage < mobileTotalPages) fetchMobiles(mobilePage + 1); }
+
+    // Cursor trail effect
+    document.addEventListener("mousemove", (e) => {
+      const trail = document.createElement("div");
+      trail.style.position = "fixed";
+      trail.style.left = `${e.clientX}px`;
+      trail.style.top = `${e.clientY}px`;
+      trail.style.width = "10px";
+      trail.style.height = "10px";
+      trail.style.borderRadius = "50%";
+      trail.style.backgroundColor = "#ff69b4";
+      trail.style.pointerEvents = "none";
+      trail.style.opacity = "0.8";
+      trail.style.zIndex = "9999";
+      document.body.appendChild(trail);
+      setTimeout(() => trail.remove(), 300);
+    });
+
+    // Flowing background
+    const canvas = document.getElementById('bgCanvas');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    class Particle {
+      constructor() {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.size = Math.random() * 3 + 1;
+        this.speedX = Math.random() * 1 - 0.5;
+        this.speedY = Math.random() * 1 - 0.5;
+      }
+      update() {
+        this.x += this.speedX;
+        this.y += this.speedY;
+        if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) {
+          this.x = Math.random() * canvas.width;
+          this.y = Math.random() * canvas.height;
+        }
+      }
+      draw() {
+        ctx.fillStyle = 'rgba(255,255,255,0.3)';
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function createParticles() {
+      for (let i = 0; i < 100; i++) {
+        particles.push(new Particle());
+      }
+    }
+
+    function animateParticles() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles.forEach(p => {
+        p.update();
+        p.draw();
+      });
+      requestAnimationFrame(animateParticles);
+    }
+
+    createParticles();
+    animateParticles();
+  </script>
+</body>
+</html>
